@@ -13,8 +13,9 @@ return new class extends Migration
     {
         Schema::create('peminjaman', function (Blueprint $table) {
             $table->id();
+            $table->string('jenis_peminjam');
             $table->string('nama_peminjam');
-            $table->string('identitas'); // NIM / NIP
+            $table->string('nomor_identitas'); // NIM / NIP
             $table->string('kontak');
             $table->foreignId('inventaris_id')->constrained()->onDelete('cascade');
             $table->date('tanggal_pinjam');
