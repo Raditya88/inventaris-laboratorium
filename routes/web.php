@@ -1,11 +1,20 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\AuthController;
 use App\Http\Controllers\InventarisController;
 use App\Http\Controllers\PeminjamanController;
 
     Route::get('/', function () {
         return view('welcome');
+    });
+
+    Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
+    Route::post('/login', [AuthController::class, 'login']);
+    Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+
+    Route::middleware('admin')->prefix('admin')->group(function () {
+    Route::get('/inventaris', [InventarisController::class, 'index']);
     });
 
     Route::resource('inventaris', InventarisController::class) ->parameters(['inventaris' => 'inventaris']);;

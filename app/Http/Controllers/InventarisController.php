@@ -4,13 +4,15 @@ namespace App\Http\Controllers;
 
 use App\Models\Inventaris;
 use Illuminate\Http\Request;
+use App\Models\Peminjaman;
 
 class InventarisController extends Controller
 {
     public function index()
     {
         $data = Inventaris::all();
-        return view('inventaris.index', compact('data'));
+        $pendingCount = Peminjaman::where('status', 'pending')->count();
+        return view('inventaris.index', compact('data', 'pendingCount'));
     }
 
     public function create()

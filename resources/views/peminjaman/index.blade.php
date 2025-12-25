@@ -1,7 +1,22 @@
 <h3>Data Peminjaman</h3>
+<a href="{{ route('inventaris.create') }}">Tambah Alat</a>
+
+{{-- INDIKATOR PEMINJAMAN PENDING --}}
+@if(isset($pendingCount) && $pendingCount > 0)
+    <div style="
+        margin:15px 0;
+        padding:10px;
+        border:1px solid #d9534f;
+        background:#fbeaea;
+        color:#a94442;
+        font-style: italic;
+    ">
+        ❗ Ada {{ $pendingCount }} peminjaman menunggu persetujuan admin
+    </div>
+@endif
 
 @if(session('success'))
-    <p style="color:green;">{{ session('success') }}</p>
+    <p style="color:green;">{{ session  ('success') }}</p>
 @endif
 @if(session('error'))
     <p style="color:red;">{{ session('error') }}</p>

@@ -1,4 +1,18 @@
 <h3>Data Inventaris</h3>
+
+<form action="{{ route('logout') }}" method="POST" style="text-align:right;">
+    @csrf
+    <button type="submit" style="
+        background:#d9534f;
+        color:white;
+        border:none;
+        padding:6px 10px;
+        cursor:pointer;
+    ">
+        Logout
+    </button>
+</form>
+
 <a href="{{ route('inventaris.create') }}">Tambah Alat</a>
 
 <table border="1" cellpadding="5">
