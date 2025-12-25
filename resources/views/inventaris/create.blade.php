@@ -21,30 +21,53 @@
             font-style: {{ $errors->has('kode') ? 'italic' : 'normal' }};
             color:#333;
         "
-    >
-</div>
+    ></div>
 
     <input
-        type="text"
-        name="nama_alat"
-        value="{{ old('nama_alat') }}"
-        placeholder="@error('nama_alat') {{ $message }} @else Nama Alat @enderror"
-        style="border:1px solid @error('nama_alat') red @else #ccc @enderror; padding:6px; width:250px;"
-    ><br><br>
+    type="text"
+    name="nama_alat"
+    value="{{ old('nama_alat') }}"
+    placeholder="@error('nama_alat') {{ $message }} @else Nama Alat @enderror"
+    style="
+        border:1px solid @error('nama_alat') red @else #ccc @enderror;
+        padding:6px;
+        width:250px;
+    ">
+
+    <style>
+        input::placeholder {
+            font-style: italic;
+            opacity: 0.6;
+        }
+    </style>
+    <br><br>
 
     <input
-        type="number"
-        name="stok"
-        value="{{ old('stok') }}"
-        placeholder="@error('stok') {{ $message }} @else Stok @enderror"
-        style="border:1px solid @error('stok') red @else #ccc @enderror; padding:6px; width:250px;"
+    type="number"
+    name="stok"
+    min="0"
+    value="{{ old('stok', 0) }}"
+    placeholder="@error('stok') {{ $message }} @else Stok @enderror"
+    style="
+        border:1px solid @error('stok') red @else #ccc @enderror;
+        padding:6px;
+        width:250px;
+    "
     ><br><br>
 
     <textarea
-        name="keterangan"
-        placeholder="@error('keterangan') {{ $message }} @else Keterangan @enderror"
-        style="border:1px solid @error('keterangan') red @else #ccc @enderror; padding:6px; width:250px; height:80px;"
-    >{{ old('keterangan') }}</textarea><br><br>
+    name="keterangan"
+    placeholder="@error('keterangan') {{ $message }} @else Keterangan @enderror"
+    style="border:1px solid @error('keterangan') red @else #ccc @enderror; padding:6px; width:250px; height:80px;"
+    >{{ old('keterangan') }}</textarea>
+
+    <style>
+        textarea::placeholder {
+            font-style: italic;
+            opacity: 0.6;
+        }
+    </style>
+    <br><br>
 
     <button type="submit">Simpan</button>
 </form>
