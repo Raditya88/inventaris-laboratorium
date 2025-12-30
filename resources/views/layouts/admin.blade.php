@@ -36,9 +36,19 @@
                     <span>Inventaris</span>
                 </a>
 
-                <a href="/admin/peminjaman" class="sidebar-link flex items-center gap-3 py-3 px-4 rounded-lg mb-1 transition-all">
-                    <i class="fas fa-file-signature w-5"></i>
-                    <span>Peminjaman</span>
+                <a href="/admin/peminjaman"
+                class="sidebar-link flex items-center justify-between py-3 px-4 rounded-lg mb-1 transition-all">
+
+                    <div class="flex items-center gap-3">
+                        <i class="fas fa-file-signature w-5"></i>
+                        <span>Peminjaman</span>
+                    </div>
+
+                    @if(isset($pendingCount) && $pendingCount > 0)
+                        <span class="bg-rose-600 text-white text-xs font-semibold px-2 py-1 rounded-full">
+                            {{ $pendingCount }}
+                        </span>
+                    @endif
                 </a>
 
                 <a href="/admin/laporan" class="sidebar-link flex items-center gap-3 py-3 px-4 rounded-lg mb-1 transition-all">
