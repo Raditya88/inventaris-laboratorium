@@ -14,7 +14,7 @@ class LaporanController extends Controller
     public function index(Request $request)
     {
         $items = class_exists(Barang::class) ? Barang::orderBy('nama_alat')->get() : collect();
-        $users = class_exists(User::class) ? User::orderBy('name_peminjam')->get() : collect();
+        $users = class_exists(User::class) ? User::orderBy('name')->get() : collect();
 
         return view('laporan', compact('items', 'users'));
     }
