@@ -3,40 +3,55 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\Peminjaman; // ganti jika model berbeda
-use App\Models\Iventaris;
+use App\Models\Peminjaman;
+use App\Models\Inventaris;
 use App\Models\User;
 use Barryvdh\DomPDF\Facade\Pdf as PDF;
+use Carbon\Carbon;
 
 class LaporanController extends Controller
 {
-    // Tampilkan halaman laporan (minimal)
+    // Tampilkan halaman laporan (hanya yang approved)
     public function index(Request $request)
     {
-        $items = class_exists(Barang::class) ? Barang::orderBy('nama_alat')->get() : collect();
-        $users = class_exists(User::class) ? User::orderBy('name')->get() : collect();
+        // ambil list inventaris untuk dropdown
+        $items = Inventaris::orderBy('nama_alat')->get();
+        $users = User::orderBy('name')->get();
 
-        return view('laporan', compact('items', 'users'));
+        // query peminjaman dengan relasi inventaris, hanya yang approved
+        $query = Peminjaman::with('inventaris')->where('status', 'approved');
+
+        // filter tanggal (jika diisi)
+        if ($request->filled('start_date') && $request->filled('end_date')) {
+            $start = Carbon::parse($request->input('start_date'))->toDateString();
+            $end = Carbon::parse($request->input('end_date'))->toDateString();
+            $query->whereBetween('tanggal_pinjam', [$start, $end]);
+        }
+
+        // filter inventaris
+        if ($request->filled('item_id')) {
+            $query->where('inventaris_id', $request->input('item_id'));
+        }
+
+        // ambil hasil (paginate agar tidak berat)
+        $peminjamans = $query->orderBy('tanggal_pinjam', 'desc')->paginate(15)->appends($request->query());
+
+        return view('laporan', compact('items', 'users', 'peminjamans'));
     }
 
-    // Ekspor PDF berdasarkan filter (minimal)
+    // Ekspor PDF berdasarkan filter (hanya yang approved)
     public function exportPdf(Request $request)
     {
-        $query = Peminjaman::with(['item', 'user']);
+        $query = Peminjaman::with('inventaris')->where('status', 'approved');
 
         if ($request->filled('start_date') && $request->filled('end_date')) {
-            $query->whereBetween('tanggal_pinjam', [
-                $request->input('start_date') . ' 00:00:00',
-                $request->input('end_date') . ' 23:59:59',
-            ]);
+            $start = Carbon::parse($request->input('start_date'))->toDateString();
+            $end = Carbon::parse($request->input('end_date'))->toDateString();
+            $query->whereBetween('tanggal_pinjam', [$start, $end]);
         }
 
         if ($request->filled('item_id')) {
-            $query->where('item_id', $request->input('item_id'));
-        }
-
-        if ($request->filled('user_id')) {
-            $query->where('user_id', $request->input('user_id'));
+            $query->where('inventaris_id', $request->input('item_id'));
         }
 
         $data = $query->orderBy('tanggal_pinjam', 'desc')->get();
@@ -47,7 +62,7 @@ class LaporanController extends Controller
 
         $pdf = PDF::loadView('laporan_pdf', [
             'data' => $data,
-            'filters' => $request->only(['start_date','end_date','item_id','user_id']),
+            'filters' => $request->only(['start_date','end_date','item_id']),
         ])->setPaper('a4', 'landscape');
 
         return $pdf->download($filename);

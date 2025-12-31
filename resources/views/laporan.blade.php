@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <title>Laporan Inventaris</title>
 
-    <!-- optional: bootstrap kalau mau rapi -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body>
@@ -38,78 +37,132 @@
             </select>
         </div>
 
-        <div class="col-md-12 d-flex gap-2">
-            <button type="submit" class="btn btn-primary">
-                Filter
-            </button>
-
-            <button type="button" id="exportPdfBtn" class="btn btn-danger">
-                Export PDF
-            </button>
+        <div class="col-md-2 d-flex align-items-end gap-2">
+            <button type="submit" id="applyFilterBtn" class="btn btn-primary w-100">Filter</button>
+            <button type="button" id="resetFilterBtn" class="btn btn-outline-secondary w-100">Reset</button>
         </div>
     </form>
 
-    <p class="text-muted">
-        Gunakan filter lalu klik <b>Export PDF</b> untuk mengunduh laporan tanpa pindah halaman.
+    <p class="text-muted mb-3">
+        Gunakan filter lalu klik <b>Export PDF</b> untuk mengunduh laporan (hanya baris yang terlihat di tabel saat ini).
     </p>
+
+    @php
+        $rows = $peminjamans ?? collect();
+        $totalCount = isset($rows) && method_exists($rows, 'total') ? $rows->total() : (is_countable($rows) ? count($rows) : 0);
+        use \Carbon\Carbon;
+        function formatDateLocal($value) {
+            if (empty($value)) return '-';
+            try { return Carbon::parse($value)->format('d/m/Y'); } catch (\Exception $e) { return $value; }
+        }
+    @endphp
+
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title">Hasil Laporan <small class="text-muted">({{ $totalCount }} item)</small></h5>
+
+            <div class="table-responsive" id="tableContainer">
+                <table class="table table-bordered table-striped align-middle" id="laporanTable">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width:50px">#</th>
+                            <th>Jenis Peminjam</th>
+                            <th>Nama Peminjam</th>
+                            <th>NIP / NIM</th>
+                            <th>Kontak</th>
+                            <th>Alat</th>
+                            <th>Tanggal Pinjam</th>
+                            <th>Tanggal Kembali</th>
+                            <th>Status</th>
+                            <th>Keterangan</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($rows as $i => $p)
+                            <tr>
+                                <td>{{ (isset($rows) && method_exists($rows, 'firstItem') ? $rows->firstItem() + $i : $i + 1) }}</td>
+
+                                <td>{{ $p->jenis_peminjam ?? '-' }}</td>
+                                <td>{{ $p->nama_peminjam ?? '-' }}</td>
+                                <td>{{ $p->nomor_identitas ?? '-' }}</td>
+                                <td>{{ $p->kontak ?? '-' }}</td>
+                                <td>{{ optional($p->inventaris)->nama_alat ?? '-' }}</td>
+                                <td>{{ formatDateLocal($p->tanggal_pinjam) }}</td>
+                                <td>{{ formatDateLocal($p->tanggal_kembali) }}</td>
+                                <td>{{ $p->status ?? '-' }}</td>
+                                <td>{{ $p->keterangan ?? '-' }}</td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="10" class="text-center">Tidak ada data. Silakan gunakan filter lalu klik "Filter".</td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+
+            @if(isset($rows) && method_exists($rows, 'links'))
+                <div class="mt-3">
+                    {{ $rows->appends(request()->query())->links() }}
+                </div>
+            @endif
+        </div>
+
+        <div class="card-footer d-flex justify-content-end">
+            <!-- Satu tombol Export PDF yang menggunakan client-side export -->
+            <button type="button" id="exportPdfBtn" class="btn btn-danger">Export PDF</button>
+        </div>
+    </div>
 </div>
+
+<!-- html2pdf (bundle includes html2canvas + jsPDF) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.3/html2pdf.bundle.min.js"></script>
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     const exportBtn = document.getElementById('exportPdfBtn');
+    const resetBtn = document.getElementById('resetFilterBtn');
     const filterForm = document.getElementById('filterForm');
 
-    exportBtn.addEventListener('click', async function () {
-        const params = new URLSearchParams(new FormData(filterForm)).toString();
-        const url = '{{ route("laporan.pdf") }}' + (params ? '?' + params : '');
-
-        try {
-            exportBtn.disabled = true;
-            exportBtn.textContent = 'Membuat PDF...';
-
-            const res = await fetch(url, {
-                method: 'GET',
-                headers: {
-                    'Accept': 'application/pdf'
-                },
-                credentials: 'same-origin'
-            });
-
-            if (!res.ok) {
-                throw new Error('Gagal mengambil PDF');
-            }
-
-            const blob = await res.blob();
-
-            let filename = 'laporan.pdf';
-            const cd = res.headers.get('content-disposition');
-            if (cd) {
-                const match = cd.match(/filename\*?=(?:UTF-8'')?["']?([^;"']+)["']?/i);
-                if (match && match[1]) {
-                    filename = decodeURIComponent(match[1].replace(/["']/g, ''));
-                }
-            } else {
-                const sd = document.getElementById('start_date').value || 'all';
-                const ed = document.getElementById('end_date').value || 'all';
-                filename = `laporan_${sd}_${ed}.pdf`;
-            }
-
-            const link = document.createElement('a');
-            const blobUrl = window.URL.createObjectURL(blob);
-            link.href = blobUrl;
-            link.download = filename;
-            document.body.appendChild(link);
-            link.click();
-            link.remove();
-            window.URL.revokeObjectURL(blobUrl);
-
-        } catch (err) {
-            console.error(err);
-            alert('Terjadi kesalahan saat export PDF');
-        } finally {
-            exportBtn.disabled = false;
-            exportBtn.textContent = 'Export PDF';
+    // Client-side export
+    exportBtn?.addEventListener('click', function () {
+        const btn = this;
+        const element = document.getElementById('tableContainer');
+        if (!element) {
+            alert('Elemen tabel tidak ditemukan.');
+            return;
         }
+
+        const opt = {
+            margin:       10,
+            filename:     `laporan_table_${new Date().toISOString().slice(0,10)}.pdf`,
+            image:        { type: 'jpeg', quality: 0.98 },
+            html2canvas:  { scale: 2, useCORS: true },
+            jsPDF:        { unit: 'mm', format: 'a4', orientation: 'landscape' }
+        };
+
+        btn.disabled = true;
+        btn.textContent = 'Membuat PDF...';
+
+        html2pdf().set(opt).from(element).save().finally(() => {
+            btn.disabled = false;
+            btn.textContent = 'Export PDF';
+        });
+    });
+
+    // Reset filter: kosongkan input dan redirect ke route laporan tanpa query
+    resetBtn?.addEventListener('click', function () {
+        // kosongkan form fields
+        const sd = document.getElementById('start_date');
+        const ed = document.getElementById('end_date');
+        const item = document.getElementById('item_id');
+
+        if (sd) sd.value = '';
+        if (ed) ed.value = '';
+        if (item) item.selectedIndex = 0;
+
+        // Redirect ke base laporan route (menghapus query string)
+        window.location.href = '{{ route("laporan.index") }}';
     });
 });
 </script>
