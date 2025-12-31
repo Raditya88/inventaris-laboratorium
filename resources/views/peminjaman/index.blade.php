@@ -89,19 +89,34 @@
                         </td>
                         <td class="px-6 py-4">
                             <div class="flex justify-center gap-2">
-                                @if($p->status == 'pending')
-                                    <form action="{{ route('peminjaman.approve', $p->id) }}" method="POST">
-                                        @csrf
-                                        <button type="submit" class="bg-emerald-500 hover:bg-emerald-600 text-white text-[11px] font-bold py-1.5 px-3 rounded-lg shadow-md shadow-emerald-100 transition-all flex items-center gap-1">
-                                            <i class="fas fa-check"></i> TERIMA
+
+                                @if($p->status === 'pending')
+
+                                    {{-- APPROVE --}}
+                                    @if($p->inventaris->stok > 0)
+                                        <form action="{{ route('peminjaman.approve', $p->id) }}" method="POST">
+                                            @csrf
+                                            <button type="submit"
+                                                class="bg-emerald-500 hover:bg-emerald-600 text-white text-[11px] font-bold py-1.5 px-3 rounded-lg">
+                                                TERIMA
+                                            </button>
+                                        </form>
+                                    @else
+                                        <button type="button" disabled
+                                            class="bg-slate-200 text-slate-400 text-[11px] font-bold py-1.5 px-3 rounded-lg cursor-not-allowed">
+                                            STOK HABIS
                                         </button>
-                                    </form>
+                                    @endif
+
+                                    {{-- TOLAK --}}
                                     <form action="{{ route('peminjaman.reject', $p->id) }}" method="POST">
                                         @csrf
-                                        <button type="submit" class="bg-white border border-rose-200 hover:bg-rose-50 text-rose-600 text-[11px] font-bold py-1.5 px-3 rounded-lg transition-all flex items-center gap-1">
-                                            <i class="fas fa-times"></i> TOLAK
+                                        <button type="submit"
+                                            class="border border-rose-300 text-rose-600 text-[11px] font-bold py-1.5 px-3 rounded-lg">
+                                            TOLAK
                                         </button>
                                     </form>
+
                                 @else
                                     <span class="text-slate-300 text-xs italic">Selesai</span>
                                 @endif
