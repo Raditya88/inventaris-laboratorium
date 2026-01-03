@@ -73,13 +73,6 @@
                 <div>
                     <h2 class="text-lg font-semibold text-gray-700">Dashboard Inventaris</h2>
                 </div>
-
-                <div class="flex items-center gap-4">
-                    <button class="text-gray-500 hover:text-blue-600"><i class="fas fa-bell"></i></button>
-                    <div class="h-8 w-8 bg-gray-200 rounded-full flex items-center justify-center border border-gray-300">
-                        <i class="fas fa-user text-gray-500"></i>
-                    </div>
-                </div>
             </header>
 
             <div class="p-8 overflow-y-auto bg-slate-50">

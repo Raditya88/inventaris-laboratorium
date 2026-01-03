@@ -2,16 +2,29 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Inventaris;
 use Illuminate\Http\Request;
 use App\Models\Peminjaman;
+use App\Models\Inventaris;
 
 class InventarisController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $data = Inventaris::all();
+        $query = Inventaris::query();
+
+        // kalau search TIDAK kosong → filter
+        if ($request->filled('search')) {
+            $search = $request->search;
+
+            $query->where(function ($q) use ($search) {
+                $q->where('kode', 'like', "%{$search}%")
+                ->orWhere('nama_alat', 'like', "%{$search}%");
+            });
+        }
+
+        $data = $query->orderBy('nama_alat')->get();
         $pendingCount = Peminjaman::where('status', 'pending')->count();
+
         return view('inventaris.index', compact('data', 'pendingCount'));
     }
 
