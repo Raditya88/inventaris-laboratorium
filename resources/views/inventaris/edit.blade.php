@@ -1,6 +1,6 @@
 <h3>Edit Inventaris</h3>
 
-<form action="{{ route('inventaris.update', $inventaris->id) }}" method="POST">
+<form action="{{ route('admin.inventaris.update', $inventaris->id) }}" method="POST">
     @csrf
     @method('PUT')
 

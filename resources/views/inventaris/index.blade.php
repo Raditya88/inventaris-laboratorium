@@ -12,7 +12,7 @@
 
         <div class="flex flex-col sm:flex-row items-center gap-3">
             {{-- SEARCH FORM --}}
-            <form method="GET" action="{{ route('inventaris.index') }}" class="flex gap-2">
+            <form method="GET" action="{{ route('admin.inventaris.index') }}" class="flex gap-2">
                 <input
                     type="text"
                     name="search"
@@ -30,14 +30,14 @@
                 </button>
 
                 @if(request('search'))
-                    <a href="{{ route('inventaris.index') }}"
+                    <a href="{{ route('admin.inventaris.index') }}"
                     class="px-4 py-2 border rounded-lg text-gray-600 hover:bg-gray-100">
                     Reset
                     </a>
                 @endif
             </form>
             {{-- ADD BUTTON --}}
-            <a href="{{ route('inventaris.create') }}" class="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-semibold shadow-lg shadow-blue-200 transition-all flex items-center justify-center gap-2">
+            <a href="{{ route('admin.inventaris.create') }}" class="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-semibold shadow-lg shadow-blue-200 transition-all flex items-center justify-center gap-2">
                 <i class="fas fa-plus"></i>
                 <span>Tambah Alat</span>
             </a>
@@ -93,10 +93,10 @@
                         </td>
                         <td class="px-6 py-4">
                             <div class="flex justify-center gap-2">
-                                <a href="{{ route('inventaris.edit', $d) }}" class="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all">
+                                <a href="{{ route('admin.inventaris.edit', $d) }}" class="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all">
                                     <i class="fas fa-edit"></i>
                                 </a>
-                                <form action="{{ route('inventaris.destroy', $d) }}" method="POST" class="inline" onsubmit="return confirm('Hapus data ini?')">
+                                <form action="{{ route('admin.inventaris.destroy', $d) }}" method="POST" class="inline" onsubmit="return confirm('Hapus data ini?')">
                                     @csrf @method('DELETE')
                                     <button type="submit" class="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all">
                                         <i class="fas fa-trash"></i>
@@ -111,7 +111,7 @@
                             <div class="flex flex-col items-center">
                                 <i class="fas fa-search text-4xl text-slate-200 mb-4"></i>
                                 <p class="text-slate-400 font-medium">Tidak ada data yang ditemukan.</p>
-                                <a href="{{ route('inventaris.index') }}" class="text-blue-500 text-sm mt-2 hover:underline">Hapus pencarian</a>
+                                <a href="{{ route('admin.inventaris.index') }}" class="text-blue-500 text-sm mt-2 hover:underline">Hapus pencarian</a>
                             </div>
                         </td>
                     </tr>

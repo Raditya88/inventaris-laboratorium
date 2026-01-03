@@ -87,12 +87,12 @@ class InventarisController extends Controller
         );
 
         $inventaris->update($request->all());
-        return redirect()->route('inventaris.index')->with('success', 'Data inventaris berhasil diperbarui');
+        return redirect()->route('admin.inventaris.index')->with('success', 'Data inventaris berhasil diperbarui');
     }
 
     public function destroy(Inventaris $inventaris)
     {
         $inventaris->delete();
-        return redirect()->route('inventaris.index')->with('success', 'Data inventaris berhasil dihapus');;
+        return redirect()->route('admin.inventaris.index')->with('success', 'Data inventaris berhasil dihapus');;
     }
 }

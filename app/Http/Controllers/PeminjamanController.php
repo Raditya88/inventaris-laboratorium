@@ -57,7 +57,7 @@ class PeminjamanController extends Controller
         if ($peminjaman->inventaris->stok <= 0) {
             return back()->with('error', 'Stok alat habis');
         }
-        
+
         // kurangi stok
         $inventaris->stok -= 1;
         $inventaris->save();

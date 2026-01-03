@@ -9,7 +9,7 @@
             <h2 class="text-2xl font-bold text-slate-800">Log Peminjaman</h2>
             <p class="text-slate-500 text-sm">Pantau dan kelola persetujuan peminjaman alat.</p>
         </div>
-        <a href="{{ route('inventaris.create') }}" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-semibold shadow-lg shadow-blue-200 transition-all flex items-center gap-2 w-fit">
+        <a href="{{ route('admin.inventaris.create') }}" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-semibold shadow-lg shadow-blue-200 transition-all flex items-center gap-2 w-fit">
             <i class="fas fa-plus text-sm"></i> Tambah Pinjaman
         </a>
     </div>

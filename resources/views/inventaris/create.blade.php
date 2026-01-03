@@ -1,6 +1,6 @@
 <h3>Tambah Inventaris</h3>
 
-<form action="{{ route('inventaris.store') }}" method="POST">
+<form action="{{ route('admin.inventaris.store') }}" method="POST">
     @csrf
 
     <div style="margin-bottom:16px; width:260px;">
