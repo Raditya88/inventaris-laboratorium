@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\DB;
 use App\Models\Peminjaman;
 use App\Models\Inventaris;
 use App\Models\PeminjamanItem;
+use App\Helpers\WhatsAppHelper;
 
 class PeminjamanController extends Controller
 {
@@ -32,9 +33,9 @@ class PeminjamanController extends Controller
             'tanggal_pinjam'   => 'required|date',
             'tanggal_kembali'  => 'required|date|after_or_equal:tanggal_pinjam',
 
-            'items'                    => 'required|array|min:1',
-            'items.*.inventaris_id'    => 'required|exists:inventaris,id',
-            'items.*.jumlah'           => 'required|integer|min:1',
+            'items'                 => 'required|array|min:1',
+            'items.*.inventaris_id' => 'required|exists:inventaris,id',
+            'items.*.jumlah'        => 'required|integer|min:1',
         ]);
 
         // ============================
@@ -66,7 +67,7 @@ class PeminjamanController extends Controller
                 'jenis_peminjam'   => $request->jenis_peminjam,
                 'nama_peminjam'    => $request->nama_peminjam,
                 'nomor_identitas'  => $request->nomor_identitas,
-                'kontak'           => $request->kontak,
+                'kontak'           => $request->kontak, // format 62xxxx
                 'tanggal_pinjam'   => $request->tanggal_pinjam,
                 'tanggal_kembali'  => $request->tanggal_kembali,
                 'status'           => 'pending',
@@ -106,13 +107,12 @@ class PeminjamanController extends Controller
     {
         $peminjaman = Peminjaman::with('items.inventaris')->findOrFail($id);
 
-        // cegah approve ulang
-        if ($peminjaman->status === 'approved') {
-            return back()->with('error', 'Peminjaman sudah disetujui');
+        if ($peminjaman->status !== 'pending') {
+            return back()->with('error', 'Peminjaman sudah diproses');
         }
 
         // ============================
-        // CEK STOK SEMUA BARANG
+        // CEK STOK
         // ============================
         foreach ($peminjaman->items as $item) {
 
@@ -129,7 +129,7 @@ class PeminjamanController extends Controller
         }
 
         // ============================
-        // PROSES APPROVE (TRANSACTION)
+        // APPROVE + POTONG STOK
         // ============================
         DB::transaction(function () use ($peminjaman) {
 
@@ -142,7 +142,13 @@ class PeminjamanController extends Controller
             ]);
         });
 
-        return back()->with('success', 'Peminjaman disetujui');
+        // ============================
+        // KIRIM WHATSAPP (FONNTE)
+        // ============================
+        $pesan = $this->formatPesanWA($peminjaman, 'DISETUJUI');
+        WhatsAppHelper::send($peminjaman->kontak, $pesan);
+
+        return back()->with('success', 'Peminjaman disetujui & WhatsApp terkirim');
     }
 
     // ============================
@@ -150,16 +156,48 @@ class PeminjamanController extends Controller
     // ============================
     public function reject($id)
     {
-        $peminjaman = Peminjaman::findOrFail($id);
+        $peminjaman = Peminjaman::with('items.inventaris')->findOrFail($id);
 
         if ($peminjaman->status !== 'pending') {
-            return back()->with('error', 'Peminjaman tidak dapat ditolak');
+            return back()->with('error', 'Peminjaman sudah diproses');
         }
 
         $peminjaman->update([
             'status' => 'rejected'
         ]);
 
-        return back()->with('success', 'Peminjaman ditolak');
+        // ============================
+        // KIRIM WHATSAPP (FONNTE)
+        // ============================
+        $pesan = $this->formatPesanWA($peminjaman, 'DITOLAK');
+        WhatsAppHelper::send($peminjaman->kontak, $pesan);
+
+        return back()->with('success', 'Peminjaman ditolak & WhatsApp terkirim');
+    }
+
+    // ============================
+    // FORMAT PESAN WHATSAPP
+    // ============================
+    private function formatPesanWA($peminjaman, $status)
+    {
+        $items = "";
+        foreach ($peminjaman->items as $item) {
+            if ($item->inventaris) {
+                $items .= "- {$item->inventaris->nama_alat} ({$item->jumlah})\n";
+            }
+        }
+
+        return
+"📌 *INFORMASI PEMINJAMAN*
+-------------------------
+Nama    : {$peminjaman->nama_peminjam}
+Status  : *{$status}*
+Pinjam  : {$peminjaman->tanggal_pinjam}
+Kembali : {$peminjaman->tanggal_kembali}
+
+📦 *Daftar Barang*
+{$items}
+
+Terima kasih 🙏";
     }
 }
