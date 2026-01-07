@@ -94,7 +94,7 @@
 
                                     {{-- APPROVE --}}
                                     @if($p->inventaris->stok > 0)
-                                        <form action="{{ route('peminjaman.approve', $p->id) }}" method="POST">
+                                        <form action="{{ route('admin.peminjaman.approve', $p->id) }}" method="POST">
                                             @csrf
                                             <button type="submit"
                                                 class="bg-emerald-500 hover:bg-emerald-600 text-white text-[11px] font-bold py-1.5 px-3 rounded-lg">
@@ -109,7 +109,7 @@
                                     @endif
 
                                     {{-- TOLAK --}}
-                                    <form action="{{ route('peminjaman.reject', $p->id) }}" method="POST">
+                                    <form action="{{ route('admin.peminjaman.reject', $p->id) }}" method="POST">
                                         @csrf
                                         <button type="submit"
                                             class="border border-rose-300 text-rose-600 text-[11px] font-bold py-1.5 px-3 rounded-lg">

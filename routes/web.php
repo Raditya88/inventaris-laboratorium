@@ -78,7 +78,6 @@ Route::middleware('admin')
         Route::post('/peminjaman/{id}/reject', [PeminjamanController::class, 'reject'])
             ->name('admin.peminjaman.reject');
 
-
         // LAPORAN + EXPORT PDF
         Route::get('/laporan', [LaporanController::class, 'index'])
             ->name('admin.laporan.index');

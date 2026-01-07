@@ -1,171 +1,146 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <title>Laporan Inventaris</title>
+@extends('layouts.admin')
 
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
-<body>
+@section('content')
+<div class="space-y-6">
 
-<div class="container mt-4">
-    <h1 class="mb-4">Laporan Inventaris</h1>
-
-    <form id="filterForm" method="GET" action="{{ route('laporan.index') }}" class="row g-3 mb-4">
-        <div class="col-md-3">
-            <label class="form-label">Mulai</label>
-            <input type="date" name="start_date" id="start_date" class="form-control"
-                   value="{{ request('start_date') }}">
+    {{-- HEADER --}}
+    <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+            <h2 class="text-2xl font-bold text-slate-800">Laporan Peminjaman</h2>
+            <p class="text-slate-500 text-sm">Filter, lihat riwayat, dan ekspor data ke PDF.</p>
         </div>
 
-        <div class="col-md-3">
-            <label class="form-label">Sampai</label>
-            <input type="date" name="end_date" id="end_date" class="form-control"
-                   value="{{ request('end_date') }}">
+        <button id="exportPdfBtn"
+            class="bg-rose-600 hover:bg-rose-700 text-white px-5 py-2.5 rounded-xl font-semibold shadow-md shadow-rose-200 transition-all flex items-center gap-2">
+            <i class="fas fa-file-pdf"></i> Export PDF
+        </button>
+    </div>
+
+
+    {{-- FILTER --}}
+    <form method="GET" action="{{ route('admin.laporan.index') }}"
+        class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm grid grid-cols-1 md:grid-cols-4 gap-4">
+
+        <div>
+            <label class="text-sm font-semibold text-slate-600">Mulai</label>
+            <input type="date" name="start_date" value="{{ request('start_date') }}"
+                class="mt-1 w-full rounded-xl border border-slate-200 px-4 py-2 focus:ring-blue-200 focus:ring outline-none">
         </div>
 
-        <div class="col-md-4">
-            <label class="form-label">Barang</label>
-            <select name="item_id" id="item_id" class="form-select">
+        <div>
+            <label class="text-sm font-semibold text-slate-600">Sampai</label>
+            <input type="date" name="end_date" value="{{ request('end_date') }}"
+                class="mt-1 w-full rounded-xl border border-slate-200 px-4 py-2 focus:ring-blue-200 focus:ring outline-none">
+        </div>
+
+        <div>
+            <label class="text-sm font-semibold text-slate-600">Barang</label>
+            <select name="item_id"
+                class="mt-1 w-full rounded-xl border border-slate-200 px-4 py-2 focus:ring-blue-200 focus:ring outline-none">
                 <option value="">Semua</option>
                 @foreach($items as $item)
-                    <option value="{{ $item->id }}"
-                        {{ request('item_id') == $item->id ? 'selected' : '' }}>
+                    <option value="{{ $item->id }}" {{ request('item_id') == $item->id ? 'selected' : '' }}>
                         {{ $item->nama_alat }}
                     </option>
                 @endforeach
             </select>
         </div>
 
-        <div class="col-md-2 d-flex align-items-end gap-2">
-            <button type="submit" id="applyFilterBtn" class="btn btn-primary w-100">Filter</button>
-            <button type="button" id="resetFilterBtn" class="btn btn-outline-secondary w-100">Reset</button>
+        <div class="flex items-end gap-2">
+            <button class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-semibold shadow-lg shadow-blue-200 transition-all">
+                Filter
+            </button>
+
+            <a href="{{ route('admin.laporan.index') }}"
+                class="px-5 py-2.5 border rounded-xl text-slate-600 hover:bg-slate-100">
+                Reset
+            </a>
         </div>
     </form>
 
-    <p class="text-muted mb-3">
-        Gunakan filter lalu klik <b>Export PDF</b> untuk mengunduh laporan (hanya baris yang terlihat di tabel saat ini).
-    </p>
 
-    @php
-        $rows = $peminjamans ?? collect();
-        $totalCount = isset($rows) && method_exists($rows, 'total') ? $rows->total() : (is_countable($rows) ? count($rows) : 0);
-        use \Carbon\Carbon;
-        function formatDateLocal($value) {
-            if (empty($value)) return '-';
-            try { return Carbon::parse($value)->format('d/m/Y'); } catch (\Exception $e) { return $value; }
-        }
-    @endphp
+    {{-- TABEL --}}
+    <div class="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+        <div id="tableContainer" class="overflow-x-auto">
 
-    <div class="card">
-        <div class="card-body">
-            <h5 class="card-title">Hasil Laporan <small class="text-muted">({{ $totalCount }} item)</small></h5>
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-slate-50 text-slate-400 text-[11px] uppercase tracking-widest">
+                        <th class="px-6 py-4 font-bold">#</th>
+                        <th class="px-6 py-4 font-bold">Jenis</th>
+                        <th class="px-6 py-4 font-bold">Nama</th>
+                        <th class="px-6 py-4 font-bold">NIP / NIM</th>
+                        <th class="px-6 py-4 font-bold">Kontak</th>
+                        <th class="px-6 py-4 font-bold">Alat</th>
+                        <th class="px-6 py-4 font-bold">Pinjam</th>
+                        <th class="px-6 py-4 font-bold">Kembali</th>
+                        <th class="px-6 py-4 font-bold text-center">Status</th>
+                        <th class="px-6 py-4 font-bold">Keterangan</th>
+                    </tr>
+                </thead>
 
-            <div class="table-responsive" id="tableContainer">
-                <table class="table table-bordered table-striped align-middle" id="laporanTable">
-                    <thead class="table-light">
+                <tbody class="divide-y divide-slate-100">
+                    @forelse($peminjamans as $i => $p)
+                    <tr class="hover:bg-blue-50/30 transition">
+
+                        <td class="px-6 py-4">{{ $loop->iteration }}</td>
+                        <td class="px-6 py-4">{{ $p->jenis_peminjam }}</td>
+                        <td class="px-6 py-4 font-semibold text-slate-700">{{ $p->nama_peminjam }}</td>
+                        <td class="px-6 py-4">{{ $p->nomor_identitas }}</td>
+                        <td class="px-6 py-4">{{ $p->kontak }}</td>
+                        <td class="px-6 py-4 text-blue-600 font-medium">
+                            {{ optional($p->inventaris)->nama_alat ?? '-' }}
+                        </td>
+                        <td class="px-6 py-4">{{ \Carbon\Carbon::parse($p->tanggal_pinjam)->format('d/m/Y') }}</td>
+                        <td class="px-6 py-4">{{ \Carbon\Carbon::parse($p->tanggal_kembali)->format('d/m/Y') }}</td>
+
+                        <td class="px-6 py-4 text-center">
+                            @if($p->status == 'approved')
+                                <span class="px-3 py-1 bg-emerald-100 text-emerald-700 text-xs rounded-full font-bold">Disetujui</span>
+                            @elseif($p->status == 'pending')
+                                <span class="px-3 py-1 bg-amber-100 text-amber-700 text-xs rounded-full font-bold">Menunggu</span>
+                            @else
+                                <span class="px-3 py-1 bg-rose-100 text-rose-700 text-xs rounded-full font-bold">Ditolak</span>
+                            @endif
+                        </td>
+
+                        <td class="px-6 py-4 text-slate-500">
+                            {{ $p->keterangan ?? '-' }}
+                        </td>
+
+                    </tr>
+                    @empty
                         <tr>
-                            <th style="width:50px">#</th>
-                            <th>Jenis Peminjam</th>
-                            <th>Nama Peminjam</th>
-                            <th>NIP / NIM</th>
-                            <th>Kontak</th>
-                            <th>Alat</th>
-                            <th>Tanggal Pinjam</th>
-                            <th>Tanggal Kembali</th>
-                            <th>Status</th>
-                            <th>Keterangan</th>
+                            <td colspan="10" class="p-10 text-center text-slate-400">
+                                Tidak ada data laporan ditemukan
+                            </td>
                         </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($rows as $i => $p)
-                            <tr>
-                                <td>{{ (isset($rows) && method_exists($rows, 'firstItem') ? $rows->firstItem() + $i : $i + 1) }}</td>
+                    @endforelse
+                </tbody>
+            </table>
 
-                                <td>{{ $p->jenis_peminjam ?? '-' }}</td>
-                                <td>{{ $p->nama_peminjam ?? '-' }}</td>
-                                <td>{{ $p->nomor_identitas ?? '-' }}</td>
-                                <td>{{ $p->kontak ?? '-' }}</td>
-                                <td>{{ optional($p->inventaris)->nama_alat ?? '-' }}</td>
-                                <td>{{ formatDateLocal($p->tanggal_pinjam) }}</td>
-                                <td>{{ formatDateLocal($p->tanggal_kembali) }}</td>
-                                <td>{{ $p->status ?? '-' }}</td>
-                                <td>{{ $p->keterangan ?? '-' }}</td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="10" class="text-center">Tidak ada data. Silakan gunakan filter lalu klik "Filter".</td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-
-            @if(isset($rows) && method_exists($rows, 'links'))
-                <div class="mt-3">
-                    {{ $rows->appends(request()->query())->links() }}
-                </div>
-            @endif
-        </div>
-
-        <div class="card-footer d-flex justify-content-end">
-            <!-- Satu tombol Export PDF yang menggunakan client-side export -->
-            <button type="button" id="exportPdfBtn" class="btn btn-danger">Export PDF</button>
         </div>
     </div>
+
 </div>
 
-<!-- html2pdf (bundle includes html2canvas + jsPDF) -->
+
+{{-- PDF SCRIPT --}}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.3/html2pdf.bundle.min.js"></script>
 
 <script>
-document.addEventListener('DOMContentLoaded', function () {
-    const exportBtn = document.getElementById('exportPdfBtn');
-    const resetBtn = document.getElementById('resetFilterBtn');
-    const filterForm = document.getElementById('filterForm');
+document.getElementById("exportPdfBtn")?.addEventListener("click", function () {
+    const el = document.getElementById("tableContainer");
+    const opt = {
+        margin: 10,
+        filename: "laporan-peminjaman.pdf",
+        image: { type: "jpeg", quality: 1 },
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: "mm", format: "a4", orientation: "landscape" }
+    };
 
-    // Client-side export
-    exportBtn?.addEventListener('click', function () {
-        const btn = this;
-        const element = document.getElementById('tableContainer');
-        if (!element) {
-            alert('Elemen tabel tidak ditemukan.');
-            return;
-        }
-
-        const opt = {
-            margin:       10,
-            filename:     `laporan_table_${new Date().toISOString().slice(0,10)}.pdf`,
-            image:        { type: 'jpeg', quality: 0.98 },
-            html2canvas:  { scale: 2, useCORS: true },
-            jsPDF:        { unit: 'mm', format: 'a4', orientation: 'landscape' }
-        };
-
-        btn.disabled = true;
-        btn.textContent = 'Membuat PDF...';
-
-        html2pdf().set(opt).from(element).save().finally(() => {
-            btn.disabled = false;
-            btn.textContent = 'Export PDF';
-        });
-    });
-
-    // Reset filter: kosongkan input dan redirect ke route laporan tanpa query
-    resetBtn?.addEventListener('click', function () {
-        // kosongkan form fields
-        const sd = document.getElementById('start_date');
-        const ed = document.getElementById('end_date');
-        const item = document.getElementById('item_id');
-
-        if (sd) sd.value = '';
-        if (ed) ed.value = '';
-        if (item) item.selectedIndex = 0;
-
-        // Redirect ke base laporan route (menghapus query string)
-        window.location.href = '{{ route("laporan.index") }}';
-    });
+    html2pdf().set(opt).from(el).save();
 });
 </script>
 
-</body>
-</html>
+@endsection

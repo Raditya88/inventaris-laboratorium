@@ -25,7 +25,7 @@ class Peminjaman extends Model
     // Relasi: peminjaman milik satu inventaris
     public function inventaris()
     {
-        return $this->belongsTo(Inventaris::class);
+        return $this->belongsTo(Inventaris::class, 'inventaris_id');
     }
 
     public function index()
