@@ -15,4 +15,9 @@ class Inventaris extends Model
         'stok',
         'keterangan'
     ];
+
+    public function peminjamanItems()
+    {
+        return $this->hasMany(PeminjamanItem::class, 'inventaris_id');
+    }
 }

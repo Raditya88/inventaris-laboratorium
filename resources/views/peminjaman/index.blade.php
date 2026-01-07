@@ -63,7 +63,11 @@
                         <td class="px-6 py-4">
                             <div class="flex items-center gap-2 text-blue-600 font-medium">
                                 <i class="fas fa-laptop text-xs"></i>
-                                <span>{{ $p->inventaris->nama_alat }}</span>
+                                <span>{@foreach(
+                                    $p->items as $item)
+                                        {{ $item->inventaris->nama_alat }} ({{ $item->jumlah }})
+                                    @endforeach
+                                    </span>
                             </div>
                         </td>
                         <td class="px-6 py-4">
@@ -93,7 +97,7 @@
                                 @if($p->status === 'pending')
 
                                     {{-- APPROVE --}}
-                                    @if($p->inventaris->stok > 0)
+                                    @if($p->items->every(fn($i) => $i->inventaris && $i->inventaris->stok >= $i->jumlah))
                                         <form action="{{ route('admin.peminjaman.approve', $p->id) }}" method="POST">
                                             @csrf
                                             <button type="submit"

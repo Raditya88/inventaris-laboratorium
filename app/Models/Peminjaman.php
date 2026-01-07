@@ -16,21 +16,20 @@ class Peminjaman extends Model
         'nama_peminjam',
         'nomor_identitas',
         'kontak',
-        'inventaris_id',
         'tanggal_pinjam',
         'tanggal_kembali',
         'status',
     ];
 
-    // Relasi: peminjaman milik satu inventaris
+    // Jika masih pakai inventaris_id lama, sementara tetap boleh
     public function inventaris()
     {
         return $this->belongsTo(Inventaris::class, 'inventaris_id');
     }
 
-    public function index()
+    // Relasi baru: banyak barang dalam 1 peminjaman
+    public function items()
     {
-        $data = Peminjaman::with('inventaris')->orderBy('created_at', 'desc')->get();
-        return view('peminjaman.index', compact('data'));
+        return $this->hasMany(PeminjamanItem::class, 'peminjaman_id');
     }
 }
