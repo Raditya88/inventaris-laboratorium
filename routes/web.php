@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\InventarisController;
 use App\Http\Controllers\PeminjamanController;
+use App\Http\Controllers\LaporanController;
 
 /*
 |--------------------------------------------------------------------------
@@ -11,12 +12,12 @@ use App\Http\Controllers\PeminjamanController;
 |--------------------------------------------------------------------------
 */
 
-// landing page
+// Landing Page
 Route::get('/', function () {
     return view('welcome');
 });
 
-// login & logout
+// Login & Logout
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
@@ -24,10 +25,9 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
 /*
 |--------------------------------------------------------------------------
-| ROUTE USER (PEMINJAMAN)
+| ROUTE USER (FORM PEMINJAMAN)
 |--------------------------------------------------------------------------
-| User TIDAK perlu login
-| Hanya mengisi form peminjaman
+| User bisa akses tanpa login
 */
 
 Route::get('/peminjaman', [PeminjamanController::class, 'create'])
@@ -39,20 +39,16 @@ Route::post('/peminjaman', [PeminjamanController::class, 'store'])
 
 /*
 |--------------------------------------------------------------------------
-| ROUTE ADMIN (WAJIB LOGIN + ROLE ADMIN)
+| ROUTE ADMIN
 |--------------------------------------------------------------------------
-| Semua halaman admin ADA DI SINI
-| Jika belum login → redirect ke /login
-| Jika bukan admin → ditolak
+| WAJIB LOGIN + ROLE ADMIN
 */
 
 Route::middleware('admin')
     ->prefix('admin')
     ->group(function () {
 
-        // =====================
-        // DASHBOARD / INVENTARIS
-        // =====================
+        // INVENTARIS
         Route::get('/inventaris', [InventarisController::class, 'index'])
             ->name('admin.inventaris.index');
 
@@ -72,9 +68,7 @@ Route::middleware('admin')
             ->name('admin.inventaris.destroy');
 
 
-        // =====================
-        // PEMINJAMAN (ADMIN)
-        // =====================
+        // PEMINJAMAN ADMIN
         Route::get('/peminjaman', [PeminjamanController::class, 'index'])
             ->name('admin.peminjaman.index');
 
@@ -85,9 +79,10 @@ Route::middleware('admin')
             ->name('admin.peminjaman.reject');
 
 
-        // =====================
-        // (OPSIONAL) LAPORAN
-        // =====================
-        // Route::get('/laporan', [LaporanController::class, 'index'])
-        //     ->name('admin.laporan.index');
+        // LAPORAN + EXPORT PDF
+        Route::get('/laporan', [LaporanController::class, 'index'])
+            ->name('admin.laporan.index');
+
+        Route::get('/laporan/export', [LaporanController::class, 'exportPdf'])
+            ->name('admin.laporan.pdf');
     });
