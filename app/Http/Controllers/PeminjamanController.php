@@ -3,38 +3,43 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use App\Models\Peminjaman;
 use App\Models\Inventaris;
+use App\Models\PeminjamanItem;
 
 class PeminjamanController extends Controller
 {
-    // tampilkan form peminjaman
+    // ============================
+    // FORM PEMINJAMAN
+    // ============================
     public function create()
     {
         $inventaris = Inventaris::all();
         return view('peminjaman.create', compact('inventaris'));
     }
 
-    // simpan data peminjaman
+    // ============================
+    // SIMPAN PEMINJAMAN
+    // ============================
     public function store(Request $request)
     {
         $request->validate([
-            'jenis_peminjam' => 'required',
-            'nama_peminjam' => 'required',
-            'nomor_identitas' => 'required',
-            'kontak' => 'required',
-            'tanggal_pinjam' => 'required|date',
-            'tanggal_kembali' => 'required|date|after_or_equal:tanggal_pinjam',
+            'jenis_peminjam'   => 'required',
+            'nama_peminjam'    => 'required',
+            'nomor_identitas'  => 'required',
+            'kontak'           => 'required',
+            'tanggal_pinjam'   => 'required|date',
+            'tanggal_kembali'  => 'required|date|after_or_equal:tanggal_pinjam',
 
-            // VALIDASI BARANG
-            'items' => 'required|array|min:1',
-            'items.*.inventaris_id' => 'required|exists:inventaris,id',
-            'items.*.jumlah' => 'required|integer|min:1'
+            'items'                    => 'required|array|min:1',
+            'items.*.inventaris_id'    => 'required|exists:inventaris,id',
+            'items.*.jumlah'           => 'required|integer|min:1',
         ]);
 
-        // ===========================
-        //  CEK STOK TERLEBIH DULU
-        // ===========================
+        // ============================
+        // CEK STOK SEBELUM SIMPAN
+        // ============================
         foreach ($request->items as $item) {
             $barang = Inventaris::find($item['inventaris_id']);
 
@@ -44,72 +49,117 @@ class PeminjamanController extends Controller
 
             if ($item['jumlah'] > $barang->stok) {
                 return back()
-                ->with('error', "Stok {$barang->nama_alat} tidak cukup! Tersedia: {$barang->stok}")
-                ->withInput();
+                    ->with(
+                        'error',
+                        "Stok {$barang->nama_alat} tidak cukup! Tersedia: {$barang->stok}"
+                    )
+                    ->withInput();
             }
         }
 
-        // ===========================
-        //  SIMPAN KE TABEL PEMINJAMAN (HEADER)
-        // ===========================
-        $peminjaman = Peminjaman::create([
-            'jenis_peminjam'   => $request->jenis_peminjam,
-            'nama_peminjam'    => $request->nama_peminjam,
-            'nomor_identitas'  => $request->nomor_identitas,
-            'kontak'           => $request->kontak,
-            'tanggal_pinjam'   => $request->tanggal_pinjam,
-            'tanggal_kembali'  => $request->tanggal_kembali,
-            'status'           => 'pending',
-        ]);
+        DB::transaction(function () use ($request) {
 
-        // ===========================
-        //  SIMPAN DETAIL BARANG
-        // ===========================
-        foreach ($request->items as $item) {
-            \App\Models\PeminjamanItem::create([
-                'peminjaman_id' => $peminjaman->id,
-                'inventaris_id' => $item['inventaris_id'],
-                'jumlah'        => $item['jumlah']
+            // ============================
+            // SIMPAN HEADER
+            // ============================
+            $peminjaman = Peminjaman::create([
+                'jenis_peminjam'   => $request->jenis_peminjam,
+                'nama_peminjam'    => $request->nama_peminjam,
+                'nomor_identitas'  => $request->nomor_identitas,
+                'kontak'           => $request->kontak,
+                'tanggal_pinjam'   => $request->tanggal_pinjam,
+                'tanggal_kembali'  => $request->tanggal_kembali,
+                'status'           => 'pending',
             ]);
-        }
 
-        return redirect()->back()->with('success', 'Peminjaman berhasil diajukan dan menunggu persetujuan Admin.');
+            // ============================
+            // SIMPAN DETAIL BARANG
+            // ============================
+            foreach ($request->items as $item) {
+                PeminjamanItem::create([
+                    'peminjaman_id' => $peminjaman->id,
+                    'inventaris_id' => $item['inventaris_id'],
+                    'jumlah'        => $item['jumlah'],
+                ]);
+            }
+        });
+
+        return back()->with(
+            'success',
+            'Peminjaman berhasil diajukan dan menunggu persetujuan Admin.'
+        );
     }
 
+    // ============================
+    // LIST PEMINJAMAN
+    // ============================
     public function index()
     {
         $data = Peminjaman::with('items.inventaris')->get();
         return view('peminjaman.index', compact('data'));
     }
 
+    // ============================
+    // APPROVE PEMINJAMAN
+    // ============================
     public function approve($id)
     {
-        $peminjaman = Peminjaman::findOrFail($id);
-        $inventaris = $peminjaman->inventaris;
+        $peminjaman = Peminjaman::with('items.inventaris')->findOrFail($id);
 
-        // cek stok
-        if ($peminjaman->inventaris->stok <= 0) {
-            return back()->with('error', 'Stok alat habis');
+        // cegah approve ulang
+        if ($peminjaman->status === 'approved') {
+            return back()->with('error', 'Peminjaman sudah disetujui');
         }
 
-        // kurangi stok
-        $inventaris->stok -= 1;
-        $inventaris->save();
+        // ============================
+        // CEK STOK SEMUA BARANG
+        // ============================
+        foreach ($peminjaman->items as $item) {
 
-        // update status
-        $peminjaman->status = 'approved';
-        $peminjaman->save();
+            if (!$item->inventaris) {
+                return back()->with('error', 'Data inventaris tidak valid');
+            }
+
+            if ($item->jumlah > $item->inventaris->stok) {
+                return back()->with(
+                    'error',
+                    "Stok {$item->inventaris->nama_alat} tidak mencukupi"
+                );
+            }
+        }
+
+        // ============================
+        // PROSES APPROVE (TRANSACTION)
+        // ============================
+        DB::transaction(function () use ($peminjaman) {
+
+            foreach ($peminjaman->items as $item) {
+                $item->inventaris->decrement('stok', $item->jumlah);
+            }
+
+            $peminjaman->update([
+                'status' => 'approved'
+            ]);
+        });
 
         return back()->with('success', 'Peminjaman disetujui');
     }
 
+    // ============================
+    // REJECT PEMINJAMAN
+    // ============================
     public function reject($id)
     {
         $peminjaman = Peminjaman::findOrFail($id);
-        $peminjaman->status = 'rejected';
-        $peminjaman->save();
+
+        if ($peminjaman->status !== 'pending') {
+            return back()->with('error', 'Peminjaman tidak dapat ditolak');
+        }
+
+        $peminjaman->update([
+            'status' => 'rejected'
+        ]);
 
         return back()->with('success', 'Peminjaman ditolak');
     }
-
 }
