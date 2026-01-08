@@ -14,7 +14,7 @@ use App\Http\Controllers\LaporanController;
 
 // Landing Page
 Route::get('/', function () {
-    return view('welcome');
+    return view('loading');
 });
 
 // Login & Logout
